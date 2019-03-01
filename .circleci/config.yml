@@ -1,0 +1,24 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/terra-module
+    docker:
+      - image: golang:1.12
+    steps:
+      - checkout
+      - run:
+          name: install dependencies
+          command: .circleci/bootstrap.sh
+      - run:
+          name: test
+          command: .circleci/test.sh
+      - store_artifacts:
+          path: cmd/testdata
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
