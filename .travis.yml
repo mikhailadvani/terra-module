@@ -1,0 +1,8 @@
+language: go
+go:
+ - 1.12
+
+script:
+  - go get github.com/spf13/cobra
+  - go get github.com/stretchr/testify/assert
+  - go test -v cmd
