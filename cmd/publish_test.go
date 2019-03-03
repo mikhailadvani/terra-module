@@ -19,13 +19,3 @@ func TestFileChecksum(t *testing.T) {
 	expectedChecksum := "b75276202a1d854e098a5ee22c7175af"
 	assert.Equal(t, expectedChecksum, actualChecksum)
 }
-
-func TestZip(t *testing.T) {
-	t.Parallel()
-	sourceFolder := "testdata/sample_module"
-	zipFileLocation := "testdata/output/sample_module_2.zip"
-	Zip(sourceFolder, zipFileLocation)
-	actualChecksum := FileChecksum(zipFileLocation)
-	expectedChecksum := "b75276202a1d854e098a5ee22c7175af"
-	assert.Equal(t, expectedChecksum, actualChecksum)
-}
