@@ -98,6 +98,68 @@ func FileChecksumE(filename string) (string, error) {
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
+// FolderChecksum computes the checksum of a folder(combination of checksums of all files of a folder)
+func FolderChecksum(folderPath string) string {
+	checksum, err := FolderChecksumE(folderPath)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	return checksum
+}
+
+// FolderChecksumE computes the checksum of a folder(combination of checksums of all files of a folder)
+func FolderChecksumE(folderPath string) (string, error) {
+	tempFile := "/tmp/data.txt"
+	DeleteFileIfExistsE(tempFile)
+	filenames, err := GetFilesOfFolderE(folderPath)
+	if err != nil {
+		return "", err
+	}
+	f, err := os.OpenFile(tempFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	for _, element := range filenames {
+		_, err = f.WriteString(FileChecksum(element) + "\n")
+		if err != nil {
+			return "", err
+		}
+	}
+	return FileChecksum(tempFile), nil
+}
+
+// GetFilesOfFolderE returns all the files in a folder
+func GetFilesOfFolderE(folderPath string) ([]string, error) {
+	var filenames []string
+	err := filepath.Walk(folderPath,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.Mode().IsRegular() {
+				filenames = append(filenames, path)
+			}
+			return nil
+		})
+	if err != nil {
+		return make([]string, 0), err
+	}
+	return filenames, nil
+}
+
+// DeleteFileIfExistsE will delete a file if it is present
+func DeleteFileIfExistsE(filepath string) error {
+	if _, err := os.Stat(filepath); err == nil {
+		err := os.Remove(filepath)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Zip packages a folder to a zip file
 func Zip(sourceFolder, zipFileLocation string) {
 	err := ZipE(sourceFolder, zipFileLocation)

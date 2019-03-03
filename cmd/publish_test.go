@@ -19,3 +19,10 @@ func TestFileChecksum(t *testing.T) {
 	expectedChecksum := "b75276202a1d854e098a5ee22c7175af"
 	assert.Equal(t, expectedChecksum, actualChecksum)
 }
+
+func TestFolderChecksum(t *testing.T) {
+	t.Parallel()
+	actualChecksum := FolderChecksum("testdata/sample_module")
+	expectedChecksum := "8dc6dae213fa6661995dd5811311d2ad"
+	assert.Equal(t, expectedChecksum, actualChecksum)
+}
