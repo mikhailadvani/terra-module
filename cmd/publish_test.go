@@ -31,6 +31,8 @@ func TestZipModule(t *testing.T) {
 	t.Parallel()
 	moduleDir := "testdata/sample_module"
 	tempDir := "/tmp"
-	ZipModule(moduleDir, tempDir)
-	assert.FileExists(t, "/tmp/sample_module-0.0.1.zip")
+	expectedZipFileLocation := "/tmp/sample_module-0.0.1.zip"
+	actualZipFileLocation := ZipModule(moduleDir, tempDir)
+	assert.FileExists(t, expectedZipFileLocation)
+	assert.Equal(t, expectedZipFileLocation, actualZipFileLocation)
 }

@@ -27,6 +27,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -52,6 +56,65 @@ func init() {
 
 func execPublish(cmd *cobra.Command, args []string) {
 	ValidateFlags(cmd.Flags())
+	moduleFolder := GetStringFlag(cmd.Flags(), "module")
+	tempDir := GetStringFlag(cmd.Flags(), "temp-dir")
+	s3Bucket := GetStringFlag(cmd.Flags(), "s3-bucket")
+	s3Prefix := GetStringFlag(cmd.Flags(), "s3-prefix")
+	zipFileLocation := ZipModule(moduleFolder, tempDir)
+	s3Key := path.Join(s3Prefix, path.Base(zipFileLocation))
+	PublishIfNotAlreadyOnS3(s3Bucket, s3Key, zipFileLocation)
+}
+
+// PublishIfNotAlreadyOnS3 uploads a file to S3 if it is not already present
+func PublishIfNotAlreadyOnS3(s3Bucket, s3Key, zipFileLocation string) {
+	if !(ObjectOnS3(s3Bucket, s3Key)) {
+		fmt.Println("Will publish")
+	}
+}
+
+// ObjectOnS3 checks if an object exists on S3
+func ObjectOnS3(s3Bucket, s3Key string) bool {
+	exists, err := ObjectOnS3E(s3Bucket, s3Key)
+	if err != nil {
+		log.Fatal("Error checking object present on S3")
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	return exists
+}
+
+// ObjectOnS3E checks if an object exists on S3
+func ObjectOnS3E(s3Bucket, s3Key string) (bool, error) {
+	svc := s3.New(session.New())
+	input := &s3.HeadObjectInput{
+		Bucket: aws.String(s3Bucket),
+		Key:    aws.String(s3Key),
+	}
+	_, err := svc.HeadObject(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case "NotFound":
+				return false, nil
+			default:
+				return false, aerr
+			}
+		} else {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
+// GetStringFlag gets the value of a string flag with error handling
+func GetStringFlag(flags *pflag.FlagSet, flagName string) string {
+	value, err := flags.GetString(flagName)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Error getting flag %s", flagName))
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	return value
 }
 
 // ValidateFlags checks if the flags passed result in a compatible set
@@ -182,7 +245,7 @@ func DeleteFileIfExistsE(filepath string) error {
 }
 
 // ZipModule creates a Zip of the module with name <FOLDER>-<VERSION>.zip
-func ZipModule(sourceFolder, tempDir string) {
+func ZipModule(sourceFolder, tempDir string) string {
 	version := ReadVersion(sourceFolder)
 	moduleName := path.Base(sourceFolder)
 	zipFileLocation := path.Join(tempDir, fmt.Sprintf("%s-%s.zip", moduleName, version))
@@ -192,6 +255,7 @@ func ZipModule(sourceFolder, tempDir string) {
 		os.Exit(1)
 	}
 	Zip(sourceFolder, zipFileLocation)
+	return zipFileLocation
 }
 
 // Zip packages a folder to a zip file
