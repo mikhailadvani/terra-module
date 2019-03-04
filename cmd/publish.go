@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -158,6 +159,19 @@ func DeleteFileIfExistsE(filepath string) error {
 		}
 	}
 	return nil
+}
+
+// ZipModule creates a Zip of the module with name <FOLDER>-<VERSION>.zip
+func ZipModule(sourceFolder, tempDir string) {
+	version := ReadVersion(sourceFolder)
+	moduleName := path.Base(sourceFolder)
+	zipFileLocation := path.Join(tempDir, fmt.Sprintf("%s-%s.zip", moduleName, version))
+	err := DeleteFileIfExistsE(zipFileLocation)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	Zip(sourceFolder, zipFileLocation)
 }
 
 // Zip packages a folder to a zip file
