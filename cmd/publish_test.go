@@ -22,7 +22,7 @@ func TestFileChecksum(t *testing.T) {
 
 func TestFolderChecksum(t *testing.T) {
 	t.Parallel()
-	actualChecksum := FolderChecksum("testdata/sample_module")
+	actualChecksum := FolderChecksum("testdata/sample_module", "/tmp/test_data.txt")
 	expectedChecksum := "8dc6dae213fa6661995dd5811311d2ad"
 	assert.Equal(t, expectedChecksum, actualChecksum)
 }

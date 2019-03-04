@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // publishCmd represents the publish command
@@ -43,12 +44,32 @@ func init() {
 	rootCmd.AddCommand(publishCmd)
 
 	publishCmd.Flags().StringP("module", "m", "", "Module folder")
+	publishCmd.Flags().StringP("temp-dir", "", "/tmp", "Temporary directory")
+	publishCmd.Flags().StringP("storage", "", "s3", "Object storage")
+	publishCmd.Flags().StringP("s3-bucket", "", "", "Target S3 bucket to publish the module to")
+	publishCmd.Flags().StringP("s3-prefix", "", "", "Prefix of the module zip")
 }
 
 func execPublish(cmd *cobra.Command, args []string) {
-	moduleFolder, _ := cmd.Flags().GetString("module")
+	ValidateFlags(cmd.Flags())
+}
+
+// ValidateFlags checks if the flags passed result in a compatible set
+func ValidateFlags(flags *pflag.FlagSet) {
+	moduleFolder, _ := flags.GetString("module")
 	if moduleFolder == "" {
-		fmt.Println("Module folder is mandatory")
+		log.Fatal("Module folder is mandatory")
+		os.Exit(1)
+	}
+	storage, _ := flags.GetString("storage")
+	if storage == "s3" {
+		s3Bucket, _ := flags.GetString("s3-bucket")
+		if s3Bucket == "" {
+			log.Fatal("S3 Bucket is mandatory")
+			os.Exit(1)
+		}
+	} else {
+		log.Fatal("Only S3 storage is currently supported")
 		os.Exit(1)
 	}
 }
@@ -100,8 +121,8 @@ func FileChecksumE(filename string) (string, error) {
 }
 
 // FolderChecksum computes the checksum of a folder(combination of checksums of all files of a folder)
-func FolderChecksum(folderPath string) string {
-	checksum, err := FolderChecksumE(folderPath)
+func FolderChecksum(folderPath, tempFile string) string {
+	checksum, err := FolderChecksumE(folderPath, tempFile)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
@@ -110,8 +131,7 @@ func FolderChecksum(folderPath string) string {
 }
 
 // FolderChecksumE computes the checksum of a folder(combination of checksums of all files of a folder)
-func FolderChecksumE(folderPath string) (string, error) {
-	tempFile := "/tmp/data.txt"
+func FolderChecksumE(folderPath, tempFile string) (string, error) {
 	DeleteFileIfExistsE(tempFile)
 	filenames, err := GetFilesOfFolderE(folderPath)
 	if err != nil {
