@@ -4,12 +4,16 @@
 *.dll
 *.so
 *.dylib
+build/
 
 # Test binary, build with `go test -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+*.out.tmp
 
 # Test outputs
+pkg/terramodule/testdata/output/
 cmd/testdata/output/*.zip
+.checksum

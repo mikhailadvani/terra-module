@@ -14,7 +14,7 @@
 
 package main
 
-import "terra-module/cmd"
+import "github.com/mikhailadvani/terra-module/cmd"
 
 func main() {
 	cmd.Execute()
